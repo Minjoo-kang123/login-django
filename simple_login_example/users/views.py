@@ -1,77 +1,70 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-
 from users.models import User
 
 # Create your views here.
-
-
 def login(request):
-    context = {
-        'method': request.method,
-        'is_valid': True
-    }
+  context = {
+    'method' : request.method,
+    'is_vaild' : True
+  }
 
-    if (request.method == 'GET'):
-        return render(request, 'users/login.html', context)
+  if (request.method == 'GET'):
+    return render(request, 'users/login.html', context)
+  
+  if (request.method == 'POST'):
+    username = request.POST.get('username')
+    password = request.POST.get('password')
 
-    if (request.method == 'POST'):
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+    try:
+      user = User.objects.get(username=username, password=password)
 
-        try:
-            user = User.objects.get(username=username, password=password) # Object
-            response = redirect('pages:index')
-            response.set_cookie('is_login', True)
-            response.set_cookie('username', user.username)
-            response.set_cookie('password', user.password)
+      # 밑에 붙혀야 됨.
+      response = redirect('pages:index')
+      response.set_cookie('username', user.username)
+      response.set_cookie('password', user.password)
+      response.set_cookie('is_login', True)
 
-            return response
+      return response
 
-        except User.DoesNotExist: # user에 Object를 가져올 수 없는 경우 => DB에 값이 존재하지 않는다 => 로그인할 수 없다.
-            context['is_valid'] = False
-            return render(request, 'users/login.html', context)
+    # 유저의 Object를 가져올 수 없는 경우, DB에 값이 존재하지 않는다. 로그인할 수 없다
+    except User.DoesNotExist:
+      context['is_vaild'] = False
 
+    return render(request, 'users/login.html', context)
 
 def login_detail(request, id):
-    return HttpResponse('user id 는' + str(id) + '입니다.')
+  return HttpResponse('user id는 ' + str(id) + '입니다.')
 
-def index(request,):
-    return render(request, 'index.html')
-
+def index(request):
+  return render(render, 'index.html')
 
 def logout(request):
-    response = redirect('pages:index')
-    response.delete_cookie('is_login')
-    response.delete_cookie('username')
-    response.delete_cookie('password')
-
-    return response
-
+  response = redirect('pages:index')
+  response.delete_cookie('is_login')
+  response.delete_cookie('username')
+  response.delete_cookie('password')
+  return response
 
 def signup(request):
-    context = {
-        'blank': False,
-        'exist': False
-    }
-    template_name = 'users/signup.html'
-    
-    if request.method == 'GET':
-        return render(request, template_name, context)
-    
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
+  context = {
+    'blank': False,
+    'exist': False
+  }
+  template_name = 'users/signup.html'
 
-        if username == '' or password == '':
-            context['blank'] = True
-            return render(request, template_name, context)
+  if request.method == 'GET':
+    return render(request, template_name, context)
+  if request.method == 'POST':
+    username = request.POST['username']
+    password = request.POST['password']
 
-        exist = User.objects.filter(username=username).exists()
-        if exist:
-            context['exist'] = exist
-            return render(request, template_name, context)
-        
-        User.objects.create(username=username, password=password)
+    if username == "" or password == "" :
+      context['blank'] = True
+      return render(request, template_name, context)
+    if User.objects.filter(username=username).exists():
+      context['exist'] = True
+      return render(request, template_name, context)
+    User.objects.create(username=username, password=password)
 
-        return redirect('users:login')
+    return redirect('users:login')
